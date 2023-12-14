@@ -26,6 +26,7 @@ class User(Base):
     User_token = relationship("Tokens", back_populates="Token_user")
     User_group = relationship("Group", back_populates="Group_user")
     User_members = relationship("Members", back_populates="Members_user")
+    User_report = relationship("Report", back_populates="Report_user")
 
 class User_signin_logs(Base):
     __tablename__ = "user_logs"

@@ -1,6 +1,7 @@
 from configuration.config import *
 from api.user.user_router import *
 from api.group.group_router import *
+from api.chat.chat_router import *
 import uvicorn
 
 Base.metadata.create_all(bind=engine)

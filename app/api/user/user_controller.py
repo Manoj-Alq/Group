@@ -61,9 +61,9 @@ def updateUserController(db,user,Auth_head,id):
     validation.password_validation(user.password)
 
 
-    service = updateUserService(db, user, db_user )
+    # service = updateUserService(db, user, db_user )
 
-    return service
+    return "  "
 
 #logoutUser
 def logoutuserController(db,Auth_head,id):

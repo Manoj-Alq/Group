@@ -1,5 +1,6 @@
 import re
 from utils.handlers import errorhandler
+from fastapi import UploadFile
 
 class Validations:
 
@@ -60,4 +61,36 @@ class Validations:
                 db_data = db.query(model).filter(model.email == key).first()
                 if db_data:
                     errorhandler(400,"email is not avaiable")
-                
+        
+        def member_check(self,db,group_id, model, user_id=None,promote=None,id=None):
+            db_members = db.query(model).filter(model.group_id == group_id, model.is_deleted == False).all()
+            users = [i.user_id for i in db_members]
+            members = [i.member_id for i in db_members]
+            print(members)
+            if user_id not in users:
+                errorhandler(403,"You're not authorize")
+            if id != None:
+                if promote == False:
+                    if id in users:
+                        errorhandler(400,"member is already in the group")
+                if id not in members:
+                    errorhandler(404,"member not found in the group")
+        
+        def admin_check(self,db, id, membermodel,db_group):
+            db_member = db.query(membermodel).filter(membermodel.user_id == id, membermodel.group_id == db_group.group_id).first()
+            print("member id",db_member.member_id)
+            if db_member.is_admin != True:
+                errorhandler(403,"you're not authorize")
+        
+        def validate_image(self,file: UploadFile):
+            # Validate file type
+            allowed_types = {"image/jpeg", "image/png", "image/gif"}
+            if file.content_type not in allowed_types:
+                errorhandler(400,"Invalid file type. Supported types: JPEG, PNG, GIF")
+
+            # Validate file size
+            # max_size = 2 * 1024 * 1024  # 2MB
+            # if file.content_length > max_size:
+            #     # raise HTTPException(status_code=400, detail="File size exceeds the maximum allowed size (2MB)")
+            #     errorhandler(400,"File size exceeds the maximum allowed size (2MB)")
+        

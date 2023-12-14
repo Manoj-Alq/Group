@@ -1,7 +1,6 @@
 from .user_model import *
 from utils.handlers import *
 from utils.auth_handlers import *
-from fastapi.responses import JSONResponse
 from datetime import datetime
 from sqlalchemy.orm import defer
 
