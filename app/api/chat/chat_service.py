@@ -47,7 +47,7 @@ def createChatService(db,file, description,db_member,db_group):
         db.rollback()
         errorhandler(400, f"{e}")
 
-def shareChatService(db,db_chat, db_member, db_group):
+def shareChatService(db,db_chat, db_member, db_group, user_id):
     try:
         db_share = Chat(
             member_id = db_member.member_id,
@@ -55,6 +55,8 @@ def shareChatService(db,db_chat, db_member, db_group):
             image = db_chat.image,
             is_shared = True,
             shared_chat_id = db_chat.chat_id,
+            created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            created_by = user_id
         )
         db_chat.shared_count += 1
         db.add(db_share)
@@ -67,10 +69,14 @@ def shareChatService(db,db_chat, db_member, db_group):
         errorhandler(400, f"{e}")
     
 
-def deleteChatService(db,db_chat):
+def deleteChatService(db,db_chat,user_id):
     try:
         db_chat.is_deleted = True
+        db_chat.deleted_by = user_id
         db.commit()
+
+        return "Chat deleted successfully"
+
     except Exception as e:
         db.rollback()
         errorhandler(400, f"{e}")

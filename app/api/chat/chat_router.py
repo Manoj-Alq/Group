@@ -9,9 +9,9 @@ from .chat_model import *
 
 httpbearer = AdminJWT()
 
-@router.get("/chat/getAllchat", tags=["Chat"])
-async def getChat(group_id : int,db: Session = Depends(get_session)):
-    return getChatController(db,group_id)
+@router.get("/chat/getAllchat",dependencies = [Depends(httpbearer)], tags=["Chat"])
+async def getChat(group_id : int,Auth_head:str = Depends(get_authorization_header),db: Session = Depends(get_session)):
+    return getChatController(db,Auth_head,group_id)
 
 @router.get("/chat/getGroupsSharedChat", tags=["Chat"])
 async def getGroupsSharedChat(chat_id : int,db: Session = Depends(get_session)):
@@ -26,5 +26,5 @@ async def createchat(chat_id:int,group_id:int,Auth_head:str = Depends(get_author
     return shareChatController(db, Auth_head,group_id,chat_id)
 
 @router.delete("/chat/deleteChat",dependencies = [Depends(httpbearer)],  tags=["Chat"], summary="member can send image here")
-async def createchat(chat_id:int,Auth_head:str = Depends(get_authorization_header),role:str = Depends(user_authorization),db: Session = Depends(get_session)):
-    return deleteChatController(db, Auth_head,chat_id)
+async def createchat(group_id:int,chat_id:int,Auth_head:str = Depends(get_authorization_header),role:str = Depends(user_authorization),db: Session = Depends(get_session)):
+    return deleteChatController(db, Auth_head,chat_id,group_id)

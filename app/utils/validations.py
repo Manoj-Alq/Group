@@ -65,6 +65,7 @@ class Validations:
         def member_check(self,db,group_id, model, user_id=None,promote=None,id=None):
             db_members = db.query(model).filter(model.group_id == group_id, model.is_deleted == False).all()
             users = [i.user_id for i in db_members]
+            print(users)
             members = [i.member_id for i in db_members]
             print(members)
             if user_id not in users:
@@ -73,14 +74,15 @@ class Validations:
                 if promote == False:
                     if id in users:
                         errorhandler(400,"member is already in the group")
-                if id not in members:
-                    errorhandler(404,"member not found in the group")
+                if promote == True:
+                    if id not in members:
+                        errorhandler(404,"member not found in the group")
         
         def admin_check(self,db, id, membermodel,db_group):
             db_member = db.query(membermodel).filter(membermodel.user_id == id, membermodel.group_id == db_group.group_id).first()
             print("member id",db_member.member_id)
             if db_member.is_admin != True:
-                errorhandler(403,"you're not authorize")
+                errorhandler(403,"you're NNot authorize")
         
         def validate_image(self,file: UploadFile):
             # Validate file type
@@ -93,4 +95,13 @@ class Validations:
             # if file.content_length > max_size:
             #     # raise HTTPException(status_code=400, detail="File size exceeds the maximum allowed size (2MB)")
             #     errorhandler(400,"File size exceeds the maximum allowed size (2MB)")
+        
+        def GroupNotFound(self,db_group):
+            errorhandler(404, "Group not found") if db_group == None else None     
+                
+        def memberNotFound(self,db_member):
+            errorhandler(404, "Member not found") if db_member == None else None      
+        
+        def AlreadyAdmin(self,db_member):
+            errorhandler(403, "Already member is a admin") if db_member.is_admin == True else None
         

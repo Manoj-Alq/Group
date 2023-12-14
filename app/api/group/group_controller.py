@@ -36,21 +36,16 @@ def createGroupController(db, group, Auth_head):
 def updateGroupController(db,group, group_id, Auth_head):
     user_id = decode_token_id(Auth_head,model=Tokens, db=db)
     db_group = db.query(Group).filter(Group.group_id == group_id, Group.is_deleted == False).first()
-    if db_group == None:
-        errorhandler(404, "Group not found")
-    if db_group.creator != user_id:
-        errorhandler(403, "You're not authorize")
-
+    errorhandler(403, "You're not authorize") if db_group.creator != user_id else None
     service = updateGroupService(db, db_group, group )
 
     return service
 
-def  deleteGroupController(db, Auth_head, group_id):
+def deleteGroupController(db, Auth_head, group_id):
     user_id = decode_token_id(Auth_head,model=Tokens, db=db)
     db_group = db.query(Group).filter(Group.group_id == group_id, Group.is_deleted == False).first()
-    if db_group == None:
-        errorhandler(404, "Group not found")
-    
+    validation.GroupNotFound(db_group)
+    errorhandler(403,"You can't delete the group") if db_group.creator != user_id else None
     service = deleteGroupService(db, db_group)
 
     return service
@@ -58,38 +53,46 @@ def  deleteGroupController(db, Auth_head, group_id):
 def addMemberController(db, Auth_head, group_id, id):
     user_id = decode_token_id(Auth_head,model=Tokens, db=db)
     db_user = db.query(User).filter(User.user_id == id).first()
-    db_group = db.query(Group).filter(Group.group_id == group_id).first()
+    db_group = db.query(Group).filter(Group.group_id == group_id, Group.is_deleted == False).first()
+    validation.GroupNotFound(db_group)
+    
+    if db_group != None:
+        validation.admin_check(db,user_id, Members,db_group) if db_group.is_private == True else None
     validation.member_check(db,group_id, Members, user_id,False,id)
-    if db_group.is_private == True:
-        validation.admin_check(db,user_id, Members,db_group)
-        if db_group.creator != user_id:
-            print("creator",db_group.creator)
-            errorhandler(403, "You're not authorize")
-
-    if db_group == None:
-        errorhandler(404,"group not found")
-    if db_user == None:
-        errorhandler(404, "user not found")
+    db_member = db.query(Members).filter(Members.group_id == db_group.group_id, Members.user_id == id).first()
+    if db_member != None:
+        errorhandler(403,"You can't add this user") if db_member.deleted_by == db_group.creator else None
+    errorhandler(404, "user not found") if db_user == None else None
     
-    
-    service = addMemberService(db,db_user, group_id)
+    service = addMemberService(db,db_user, group_id,user_id,db_member)
 
     return service
 
 def deleteMemberController(db, Auth_head, group_id, member_id):
     user_id = decode_token_id(Auth_head,model=Tokens, db=db)
     db_member = db.query(Members).filter(Members.member_id == member_id, Members.is_deleted == False).first()
-    if db_member == None:
-        errorhandler(404,"Member not found")
-    db_group = db.query(Group).filter(Group.group_id == group_id).first()
+    errorhandler(404,"Member not found") if db_member == None else None
+    db_group = db.query(Group).filter(Group.group_id == group_id,Group.is_deleted == False).first()
+    validation.GroupNotFound(db_group)
     validation.member_check(db,group_id, Members,user_id,False)
-    validation.admin_check(db,user_id, Members,db_group)
-    if db_group.creator == db_member.user_id:
-        errorhandler(403,"Creator can't be deleted")
-    if db_group == None:
-        errorhandler(404,"group not found")
+    if db_group != None:
+        validation.admin_check(db,user_id, Members,db_group) if db_group.is_private == True else None
+        errorhandler(403,"Creator can't be deleted") if db_group.creator == db_member.user_id else None
+    service = deleteMemberService(db,db_member,user_id)
+
+    return service
+
+def leaveFromGroupController(db, Auth_head, group_id, member_id):
+    user_id = decode_token_id(Auth_head,model=Tokens, db=db)
+    db_member = db.query(Members).filter(Members.member_id == member_id, Members.is_deleted == False).first()
+    errorhandler(404,"Member not found") if db_member == None else None
+    db_group = db.query(Group).filter(Group.group_id == group_id).first()
+    validation.GroupNotFound(db_group)
+    errorhandler(403,"You can't leave another member") if db_member.user_id != user_id else None
+    errorhandler(403,"Creator can't leave from group") if db_group.creator == db_member.user_id else None
+    validation.member_check(db,group_id, Members,user_id,False,member_id)
     
-    service = deleteMemberService(db,db_member)
+    service = leaveFromGroupService(db,db_member)
 
     return service
 
@@ -108,13 +111,12 @@ def reportGroupController(db, Auth_head, group_id,report, report_type):
 def promoteAdminController(db, Auth_head, group_id,id):
     user_id = decode_token_id(Auth_head,model=Tokens, db=db)
     db_group = db.query(Group).filter(Group.group_id == group_id, Group.is_deleted==False).first()
-    if db_group == None:
-        errorhandler(404,"Group not found")
-    validation.member_check(db,group_id, Members, user_id,True, id)
+    validation.GroupNotFound(db_group)
     db_member = db.query(Members).filter(Members.member_id == id, Members.is_deleted == False).first()
+    validation.memberNotFound(db_member)
+    validation.member_check(db,group_id, Members, user_id,True, id)
     validation.admin_check(db,user_id, Members,db_group)
-    if db_member == None:
-        errorhandler(404,"member not found")
+    errorhandler(403, "Already member is a admin") if db_member.is_admin == True else None
 
 
     service = promoteAdminService(db,db_group,db_member)
@@ -124,15 +126,13 @@ def promoteAdminController(db, Auth_head, group_id,id):
 def depromoteAdminController(db, Auth_head, group_id,member_id):
     user_id = decode_token_id(Auth_head,model=Tokens, db=db)
     db_group = db.query(Group).filter(Group.group_id == group_id, Group.is_deleted==False).first()
-    if db_group == None:
-        errorhandler(404,"Group not found")
-    if db_group.creator != user_id:
-        errorhandler(403, "You're not authorize")
+    validation.GroupNotFound(db_group)
+    errorhandler(403, "you can't depromote") if db_group.creator != user_id else None
     validation.member_check(db,group_id, Members, user_id,False)
     db_admin = db.query(GroupAdmin).filter(GroupAdmin.member_id == member_id, GroupAdmin.is_deleted == False).first()
-    if db_admin == None:
-        errorhandler(404,"member not found")
-    
+    print(db_admin)
+    errorhandler(404,"Admin not found") if db_admin == None else None
+        
     service = depromoteAdminService(db,db_group,db_admin)
 
     return service

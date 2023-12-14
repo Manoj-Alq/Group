@@ -25,6 +25,10 @@ async def updategroup(group: CreateGroup,group_id:int,role:str = Depends(user_au
 async def deleteGroup(group_id:int,role:str = Depends(user_authorization),Auth_head:str = Depends(get_authorization_header),db: Session = Depends(get_session)):
     return deleteGroupController(db, Auth_head, group_id)
 
+@router.delete("/group/leaveFromGroup",dependencies = [Depends(httpbearer)], tags=["group"])
+async def leaveFromGroup(group_id:int,member_id:int,role:str = Depends(user_authorization),Auth_head:str = Depends(get_authorization_header),db: Session = Depends(get_session)):
+    return leaveFromGroupController(db, Auth_head, group_id, member_id)
+
 @router.post("/group/addmember",dependencies = [Depends(httpbearer)], tags=["group"])
 async def addMember(group_id:int,user_id:int,role:str = Depends(user_authorization),Auth_head:str = Depends(get_authorization_header),db: Session = Depends(get_session)):
     return addMemberController(db, Auth_head, group_id, user_id)

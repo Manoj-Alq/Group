@@ -87,36 +87,52 @@ def deleteGroupService(db, db_group):
         db_group.is_deleted = True
         db.commit()
         return JSONResponse({
-            "message": "author deleted successfully"
+            "message": "Group deleted successfully"
         })
     except Exception as e:
         db.rollback()
         errorhandler(400, f"{e}")
 
-def addMemberService(db,db_user,group_id):
+def addMemberService(db,db_user,group_id,user_id,db_member):
     try:
-        db_member = Members(
-            user_id = db_user.user_id,
-            group_id = group_id,
-            created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            created_by = db_user.user_id
-        )
-        db.add(db_member)
-        db.commit()
-        db.refresh(db_member)
-        return "success"
+        if db_member:
+            db_member.is_deleted = False
+            db_member.deleted_by = None
+            db.commit()
+        else:
+            db_member = Members(
+                user_id = db_user.user_id,
+                group_id = group_id,
+                created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                created_by = user_id
+            )
+            db.add(db_member)
+            db.commit()
+            db.refresh(db_member)
+        return "successfully addedd member"
     except Exception as e:
         db.rollback()
         errorhandler(400, f"{e}")
 
-def deleteMemberService(db,db_member):
+def deleteMemberService(db,db_member, user_id):
     try:
         db_member.is_deleted = True
+        db_member.deleted_by = user_id
         db.commit()
         return "Member deleted successfully"
     except Exception as e:
         db.rollback()
         errorhandler(400, f"{e}")
+
+def leaveFromGroupService(db,db_member):
+    try:
+        db_member.is_deleted = True
+        db.commit()
+        return "leaved successfully"
+    except Exception as e:
+        db.rollback()
+        errorhandler(400, f"{e}")
+
 
 def reportGroupService(db, user_id, db_group, report_type, report):
     try:

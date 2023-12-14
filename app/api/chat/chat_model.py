@@ -13,7 +13,7 @@ class Chat(Base):
     shared_chat_id = Column(Integer,ForeignKey("chat.chat_id"))
     shared_count = Column(Integer, default=0)
     is_deleted = Column(Boolean, nullable=False, default=False)
-    deleted_by = Column(Integer)
+    deleted_by = Column(Integer, ForeignKey("user.user_id"))
     created_at = Column(DateTime)
     created_by = Column(Integer)
     updated_at = Column(Integer)
